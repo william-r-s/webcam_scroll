@@ -1,0 +1,5 @@
+# hsv_background = cv2.cvtColor(background, cv2.COLOR_BGR2HSV).astype(np.int32)
+# hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.int32)
+# diff = abs(hsv_background[:, :, 0] - hsv_img[:, :, 0]).astype(np.uint8)
+# diff = np.sqrt(np.sum(np.square(hsv_img - hsv_background), axis=2)).astype(np.uint8)
+# diff = scipy.ndimage.gaussian_filter(diff, 20, 0)
