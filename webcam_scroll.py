@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--output-file", default=None, type=str)
 parser.add_argument("--input-file", default=None, type=str)
 
-dz = [(0, 100), (320, 240)]
+dz = []
 dragging = False
 drag_lock = threading.Lock()
 
@@ -50,11 +50,13 @@ def handle_drag(event, x, y, *_):
 if __name__ == "__main__":
     args = parser.parse_args()
 
+    dz = [(0, 40), (160, 120)]
     default_framerate = 30
     default_font = cv2.FONT_HERSHEY_SIMPLEX
     wait_duration = 1
-    filter_radius = 20
+    filter_radius = 10
     repeat_initial_delay = 8
+    downscale_factor = 2
 
     frameskip = 1
     if args.input_file is not None:
@@ -90,13 +92,13 @@ if __name__ == "__main__":
 
         b = cam.grab()
         if b and i % frameskip == 0:
-            retval, img = cam.retrieve()
-            if (img is None and args.output_file is None and args.input_file is not None):
+            retval, raw_img = cam.retrieve()
+            if (raw_img is None and args.output_file is None and args.input_file is not None):
                 # Loop to beginning
                 cam.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 fgbg = cv2.createBackgroundSubtractorMOG2()
                 continue
-
+            img = raw_img[::downscale_factor, ::downscale_factor, :]
             background = fgbg.getBackgroundImage()
             if background is not None:
                 diff = diff_image(background, img, filter_radius)
@@ -130,7 +132,9 @@ if __name__ == "__main__":
                         else:
                             active_start_time = None
 
-                cv2.imshow('Video', annotated_img)
+                cv2.imshow('Video',
+                           cv2.resize(
+                               annotated_img, None, fx=downscale_factor, fy=downscale_factor))
 
             fgmask = fgbg.apply(img)
 
@@ -140,7 +144,7 @@ if __name__ == "__main__":
                     fourcc_out = cv2.VideoWriter_fourcc(* 'MJPG')
                     writer = cv2.VideoWriter(args.output_file, fourcc_out,
                                              default_framerate / frameskip, (w, h), True)
-                writer.write(img)
+                writer.write(raw_img)
 
     if writer is not None:
         writer.release()
